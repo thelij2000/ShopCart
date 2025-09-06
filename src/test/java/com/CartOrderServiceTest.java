@@ -68,4 +68,84 @@ public class CartOrderServiceTest {
 
         assertEquals(10, testBook.getStockQuantity());
     }
+
+    @Test
+    void addToCart_shouldNotAddItem_whenQuantityIsZero() {
+        Cart cart = new Cart(1L, testUser, new ArrayList<>());
+        cartService.addToCart(cart, testBook, 0);
+        assertEquals(0, cart.getItems().size());
+    }
+
+    @Test
+    void addToCart_shouldNotAddItem_whenQuantityIsNegative() {
+        Cart cart = new Cart(1L, testUser, new ArrayList<>());
+        cartService.addToCart(cart, testBook, -2);
+        assertEquals(0, cart.getItems().size());
+    }
+
+    @Test
+    void checkout_shouldReturnNull_whenCartIsEmpty() {
+        Cart cart = new Cart(1L, testUser, new ArrayList<>());
+        Order order = orderService.checkout(cart);
+        assertNull(order);
+    }
+
+    @Test
+    void addToCart_shouldIncreaseQuantity_whenSameBookAddedTwice() {
+        Cart cart = new Cart(1L, testUser, new ArrayList<>());
+        cartService.addToCart(cart, testBook, 2);
+        cartService.addToCart(cart, testBook, 3);
+        assertEquals(1, cart.getItems().size());
+        assertEquals(5, cart.getItems().get(0).getQuantity());
+    }
+
+    @Test
+    void cancelOrder_shouldHandleNullOrderGracefully() {
+        assertDoesNotThrow(() -> orderService.cancelOrder(null));
+    }
+
+    @Test
+    void addToCart_shouldNotAddItem_whenBookStockIsZero() {
+        testBook.setStockQuantity(0);
+        Cart cart = new Cart(1L, testUser, new ArrayList<>());
+        cartService.addToCart(cart, testBook, 1);
+        assertEquals(0, cart.getItems().size());
+    }
+
+    @Test
+    void checkout_shouldReturnNull_whenRequestedQuantityExceedsStock() {
+        testBook.setStockQuantity(2);
+        Cart cart = new Cart(1L, testUser, new ArrayList<>());
+        cartService.addToCart(cart, testBook, 5);
+        Order order = orderService.checkout(cart);
+        assertNull(order);
+    }
+
+    @Test
+    void cancelOrder_shouldNotChangeStock_whenOrderQuantityIsZero() {
+        testBook.setStockQuantity(5);
+        Order order = new Order(2L, testBook, 0);
+        orderService.cancelOrder(order);
+        assertEquals(5, testBook.getStockQuantity());
+    }
+
+    @Test
+    void addToCart_shouldAddMultipleDifferentBooks() {
+        Book anotherBook = new Book(2L, "Refactoring", "Martin Fowler", "Addison-Wesley", "0987654321", 60.0, 5, "Refactoring techniques", new Category(2L, "Programming", "Technical books"));
+        Cart cart = new Cart(1L, testUser, new ArrayList<>());
+        cartService.addToCart(cart, testBook, 2);
+        cartService.addToCart(cart, anotherBook, 3);
+        assertEquals(2, cart.getItems().size());
+        assertEquals(2, cart.getItems().get(0).getQuantity());
+        assertEquals(3, cart.getItems().get(1).getQuantity());
+    }
+
+    @Test
+    void cancelOrder_shouldNotExceedOriginalStock() {
+        testBook.setStockQuantity(10);
+        Order order = new Order(3L, testBook, 5);
+        orderService.cancelOrder(order);
+        orderService.cancelOrder(order); // Cancel twice
+        assertEquals(20, testBook.getStockQuantity());
+    }
 }

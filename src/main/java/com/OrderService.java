@@ -16,6 +16,7 @@ public class OrderService {
     }
 
     public void cancelOrder(Order order) {
+        if (order == null) return;
         Book book = order.getBook();
         book.setStockQuantity(book.getStockQuantity() + order.getQuantity());
     }
